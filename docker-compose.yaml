@@ -1,0 +1,51 @@
+version: '2'
+
+networks:
+  ros:
+    driver: bridge
+
+services:
+  ros-master:
+    image: myros
+    command: stdbuf -o L roscore
+    volumes:
+        - /home/prota/code/tutorialROS/workspace:/home
+    networks:
+      - ros
+    restart: always
+
+  imgpub:
+    image: myros
+    depends_on:
+      - ros-master
+    environment:
+      - "ROS_MASTER_URI=http://ros-master:11311"
+      - "ROS_HOSTNAME=imgpub"
+    command: >
+      bash -c "source devel/setup.bash
+      && rosrun image_grabber impublish.py"
+    volumes:
+        - /home/prota/code/tutorialROS/workspace:/home
+    devices:
+        - "/dev/video0"
+    networks:
+      - ros
+    restart: always
+
+  imsub:
+    image: myros
+    depends_on:
+      - ros-master
+      - imgpub
+    environment:
+      - "ROS_MASTER_URI=http://ros-master:11311"
+      - "ROS_HOSTNAME=imsub"
+    command: >
+      bash -c "source devel/setup.bash
+      && rosrun image_subsriber imsub.py"
+    volumes:
+        - /home/prota/code/tutorialROS/workspace:/home
+        - /home/prota/Downloads/tmp:/tmp
+    networks:
+      - ros
+    restart: always
